@@ -1,21 +1,42 @@
 #include "driver/gpio.h"
+#include "driver/uart.h"
+#include "driver/iomux.h"
+
+#define UNUM 0
+
+void gpio_isr_handler()
+{
+    // !!!IMPORTANT!!! Otherwise infinite interrupts!!! >:(
+    GPIO_STATUS_CLEAR = GPIO_STATUS;
+    // Some code
+}
 
 void app()
 {
-    gpio_enable(5);
+    IOMUX_GPIO5 |= IOMUX_PIN_PULLUP;
 
-    int i = 0;
+    gpio_out(4, true);
+    gpio_out(5, false);
+    gpio_isr_add(5, GPIO_INT_TYPE_POSEDGE);
+    
+    uart_config_t config = {
+        .stop_bit = UART_STOP_BIT_1,
+        .data_bits = UART_DATA_BITS_8,
+        .parity = UART_PARITY_EVEN,
+        .parity_en = true,
+    };
 
-    while (i++ < 3) {
-        gpio_set(5, 1);
-        for (int i = 0; i < 800000; i++);
-        gpio_set(5, 0);
-        for (int i = 0; i < 800000; i++);
+    uart_enable(UNUM, UART_BAUD_115200, &config);
+    
+    while (true) {
+        switch (uart_getc(UNUM)) {
+        case '+':
+            gpio_out_write(4, 1);
+            break;
+        case '-':
+            gpio_out_write(4, 0);
+            break;
+        }
     }
-
-    gpio_set(5, 1);
-    gpio_disable(5);
-
-    while (1);
 }
 

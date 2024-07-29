@@ -1,35 +1,39 @@
-ENTRY(__boot)
+ENTRY(__boot_startup)
 
 MEMORY
 {
-    flash : ORIGIN = 0x40100000, LENGTH = 0x1000
-    sram : ORIGIN = 0x3ffe8000, LENGTH = 0x1000
+    iram : ORIGIN = 0x40100000, LENGTH = 0x08000
+    dram : ORIGIN = 0x3ffe8000, LENGTH = 0x14000
 }
 
 SECTIONS
 {
-    .boot : { *(.boot*) } > flash
-    
-    .literal : { *(.literal*) } > flash
-    
     .text :
     {
+        *(.vectors*)
+        *(.boot.startup)
+        *(.boot)
+        . = ALIGN(4);
         *(.text*)
-    } > flash
-
-    .rodata :
-    {
-        *(.rodata*)
-    } > sram
+        __etext = .;
+    } > iram
 
     .data :
     {
         *(.data*)
-    } > sram
+    } > dram
 
     .bss :
     {
-        *(.bss*)
-    } > sram
+        __sbss = .;
+        *(.bss)
+        *(COMMON)
+        __ebss = .;
+    } > dram
+
+    .rodata :
+    {
+        *(.rodata*)
+    } > dram
 }
 
